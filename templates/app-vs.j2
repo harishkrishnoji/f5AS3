@@ -1,14 +1,14 @@
 "value": {
     "class": "Application",
-    "template": "http",
-    "serviceMain": {
+    "template": "generic",
+    "{{path}}": {
         "class": "Service_HTTP",
         "virtualAddresses": [
             "{{private_ip}}"
         ],
-        "pool": "app_pool"
+        "pool": "{{path}}-pool"
     },
-    "app_pool": {
+    "{{path}}-pool": {
         "class": "Pool",
         "monitors": [
             "http"
