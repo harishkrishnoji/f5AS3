@@ -1,0 +1,25 @@
+---
+- name: CREATE AS3 JSON BODY
+  set_fact:
+    as3_app_body: "{{ lookup('template', 'templates/app-vs.j2', split_lines=False) }}"
+
+- name: VALIDATE AND PUSH AS3
+  register: out
+  uri:
+    url: "https://{{ ansible_host }}/mgmt/shared/appsvcs/declare?controls.dryRun={{ DRY_RUN }}"
+    method: PATCH
+    # body: "{{ lookup('template','templates/tenant_new.j2', split_lines=False) }}"
+    body: "{{ lookup('template','templates/tenant_update.j2', split_lines=False) }}"
+    status_code: 200
+    timeout: 300
+    # headers:
+    #  Content-Type: application/json
+    body_format: json
+    force_basic_auth: true
+    user: "{{ user }}"
+    password: "{{ password }}"
+    validate_certs: false
+  delegate_to: localhost
+
+- debug:
+    var: out['json']['results']

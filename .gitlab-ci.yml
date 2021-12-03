@@ -1,0 +1,69 @@
+---
+stages:
+  - test
+  - publish
+  - develop
+  - master
+  - clean
+
+variables:
+  DEVELOP_IMAGE: ${CI_REGISTRY_IMAGE}:dev
+  RELEASE_IMAGE: ${CI_REGISTRY_IMAGE}:latest
+  COMMIT_IMAGE: ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
+  COMPOSE_PROJECT_NAME: ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}
+
+default:
+  before_script:
+    - docker --config ${PWD}/.docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  tags:
+    - FTS_LAB_CONCURRENT
+
+workflow:
+  rules:
+    # Needed to enable merged results pipelines
+    - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
+    # The default trigger for the pipelines
+    - if: "$CI_PIPELINE_SOURCE == 'push'"
+
+# CI Pipeline stages in this file are defaulted to a shared runner
+# with the tag of `FTS_LAB_CONCURRENT`. If you are wanting to use a different
+# runner please either change the default tags for the repository above or
+# add the `tags` key to the stage(s) that you would like to change the runner
+# and add the appropriate runner's tag to the corresponding list.
+test:
+  stage: test
+  script:
+    - docker-compose up --build --force-recreate --quiet-pull --exit-code-from test test
+
+publish:
+  stage: publish
+  script:
+    - docker-compose build cli
+    # Push short sha tagged image
+    - docker --config ${PWD}/.docker push $COMMIT_IMAGE
+
+develop:
+  stage: develop
+  script:
+    - docker tag $COMMIT_IMAGE $DEVELOP_IMAGE
+    # Push develop image
+    - docker --config ${PWD}/.docker push $DEVELOP_IMAGE
+  rules:
+    - if: "$CI_COMMIT_BRANCH == 'develop'"
+
+master:
+  stage: master
+  script:
+    - docker tag $COMMIT_IMAGE $RELEASE_IMAGE
+    # Push latest image
+    - docker --config ${PWD}/.docker push $RELEASE_IMAGE
+  rules:
+    - if: "$CI_COMMIT_BRANCH == 'master'"
+    - if: "$CI_COMMIT_BRANCH == 'main'"
+
+clean:
+  stage: clean
+  script:
+    - docker-compose down --rmi local --remove-orphans --volumes || true
+    - docker rmi -f $COMMIT_IMAGE $RELEASE_IMAGE || true
+  when: always

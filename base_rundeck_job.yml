@@ -1,0 +1,45 @@
+---
+- defaultTab: "nodes"
+  description: "F5 LB VIP Provision using AS3 and Ansible"
+  executionEnabled: true
+  loglevel: "INFO"
+  name: "F5 AS3"
+  nodeFilterEditable: false
+  options:
+    - description: "Path to the job workspace on the rundeck host"
+      hidden: true
+      name: "jobpath"
+      value: "/opt/rundeck/tmp/MyAnsible/push"
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+      - configuration:
+          gitBaseDirectory: "/opt/rundeck/tmp/MyAnsible/push"
+          gitBranch: "master"
+          gitLogDisable: "false"
+          gitUrl: "git@git-enterprise-jc.onefiserv.net:fts-san/sane/rundeck/lb/f5-as3.git"
+          gitUseProjectBasedSubdirectory: "false"
+          strictHostKeyChecking: "no"
+        description: "MyAnsible"
+        nodeStep: false
+        type: "git-clone-step"
+      - description: "Push configuration"
+        script: |-
+          # Get to the cloned repo
+          cd $RD_OPTION_JOBPATH
+
+          echo "Logging into docker registry"
+          docker login git-enterprise-jc.onefiserv.net:4443 -u <deploy username here> -p $RD_OPTION_DOCKER_TOKEN
+
+          echo "Pulling images from docker registry"
+          docker pull git-enterprise-jc.onefiserv.net:4443/fts-san/sane/rundeck/lb/f5-as3:latest || true
+
+          echo "Executing Job"
+          docker-compose up --exit-code-from cli cli
+
+          docker-compose down --volumes
+    keepgoing: false
+    strategy: "node-first"

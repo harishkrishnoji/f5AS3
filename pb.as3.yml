@@ -1,0 +1,19 @@
+---
+- name: F5 AS3
+  hosts: gio-lab
+  connection: local
+  gather_facts: false
+
+  vars:
+    path: "{{ lookup('env', 'RD_OPTION_APP_NAME') }}"
+    private_ip: "{{ lookup('env', 'RD_OPTION_VIP') }}"
+    pool_mem: "{{ lookup('env', 'RD_OPTION_MEMBERS') }}"
+    password: "{{ lookup('env', 'RD_OPTION_F5PWD') }}"
+    user: "{{ lookup('env', 'RD_OPTION_F5USER') }}"
+    pool_members: "{{ pool_mem.split(',') }}"
+    DRY_RUN: "{{ lookup('env', 'RD_OPTION_DRY_RUN') }}"
+
+  tasks:
+    - name: CREATE AND PUSH AS3
+      include_role:
+        name: f5-as3
