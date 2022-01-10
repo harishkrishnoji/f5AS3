@@ -9,7 +9,7 @@
     url: "https://{{ ansible_host }}/mgmt/shared/appsvcs/declare?controls.dryRun={{ DRY_RUN }}"
     method: PATCH
     # body: "{{ lookup('template','templates/tenant_new.j2', split_lines=False) }}"
-    body: "{{ lookup('template','templates/tenant_update.j2', split_lines=False) }}"
+    body: "{{ lookup('template','templates/tenant_update_vs_add.j2', split_lines=False) }}"
     status_code: 200
     timeout: 300
     # headers:
